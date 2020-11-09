@@ -15,6 +15,7 @@ Look at brackets -> [800, 1100), [1100, 1400), [1800, 2100), [2100, 2400)
 
 Maybe 
 	-Check upsets and rating consistent games per opening move type
+	
 	-What opening move(s) are effective against opening move X? 
 
 **upsets defined as lower rated person winning against a higher rated regardless 
