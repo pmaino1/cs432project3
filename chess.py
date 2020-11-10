@@ -28,6 +28,6 @@ def main():
         row = {}
         for field in header:
             row[field] = each[field]
-            posts.insert_one(row)  
+        posts.insert_one(row.copy())  
     csvfile.close()
 main()
