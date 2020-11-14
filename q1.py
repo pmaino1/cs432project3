@@ -19,7 +19,7 @@ opening_names = []
     Prints the total lower rated and higher rated wins 
     Calls printWins() 
 '''
-def printTotals(l, h):
+def printsTotals(l, h, move):
     games = {
         "$and": [{
             "$or": [
@@ -30,7 +30,7 @@ def printTotals(l, h):
                         { "black_rating" : { "$gte" : l } },
                         { "black_rating" : { "$exists" : True} } ] }
             ]},
-            { "moves": { "$regex": '^e4.*'} }
+            { "moves": { "$regex": '^'+move} }
         ]
     }
     
@@ -53,7 +53,6 @@ def printTotals(l, h):
 
             
     print("hrw: " ,higherRatedWin, " lrw: ", lowerRatedWin, " draws: ", draw)
-    printWins(l,h)
     
     
     
