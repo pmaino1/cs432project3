@@ -19,7 +19,7 @@ opening_names = []
 
     Needs setOpeningName() to be run first.
 '''
-def findBlackOpeningWinrateE4(l, h):
+def findBlackOpeningWinrate(l, h, whitemove):
     games = {
         "$and" : [
             {"$or": [
@@ -30,7 +30,7 @@ def findBlackOpeningWinrateE4(l, h):
                         { "black_rating" : { "$gte" : l } },
                         { "black_rating" : { "$exists" : True} } ] }
             ]},
-            {"moves":{ "$regex" : '^e4'}}
+            {"moves":{ "$regex" : '^'+whitemove}}
         ]
     }
 
@@ -53,7 +53,7 @@ def findBlackOpeningWinrateE4(l, h):
 
         #print(opening_count_dict)
 
-    print("-WINRATE OF EACH (e4 move) OPENING:\n--")
+    print("-[",l,",",h,"] WINRATE OF EACH (",whitemove," move) OPENING:\n--")
     for each in opening_names_temp:
         if opening_count_dict[each]["wins"] == 0 and opening_count_dict[each]["losses"] == 0:
             continue
@@ -73,7 +73,7 @@ def findBlackOpeningWinrateE4(l, h):
     Needs setOpeningName() to be run first.
 '''
 
-def findHighestWinrateE4(opening_count_dict, n):
+def findHighestWinrate(opening_count_dict, n):
 
     mostWinOpening = ""
     mostWinCount = 0
@@ -89,7 +89,7 @@ def findHighestWinrateE4(opening_count_dict, n):
             mostWinOpening = opening
 
 
-    print("-The highest winrate opening (e4 first move), with ", mostWinCount, " win percentage in atleast ",n ," moves:")
+    print("-The highest winrate opening, with ", mostWinCount, " win percentage in atleast ",n ," moves:")
     print("--")
     print(" ",mostWinOpening)
     print("------------------------")
@@ -102,16 +102,19 @@ def findHighestWinrateE4(opening_count_dict, n):
 
     Needs setOpeningName() to be run first.
 '''
-def findOpeningUsage(l, h):
+def findOpeningUsage(l, h, whitemove):
 
     games = {
-        "$or": [
-            { "$and": [ { "white_rating": { "$lt" : h } },
-                    { "white_rating" : { "$gte" : l } },
-                    { "white_rating" : { "$exists" : True} } ] },
-            { "$and": [ { "black_rating": { "$lt" : h } },
-                    { "black_rating" : { "$gte" : l } },
-                    { "black_rating" : { "$exists" : True} } ] }
+        "$and" : [
+            {"$or": [
+                { "$and": [ { "white_rating": { "$lt" : h } },
+                        { "white_rating" : { "$gte" : l } },
+                        { "white_rating" : { "$exists" : True} } ] },
+                { "$and": [ { "black_rating": { "$lt" : h } },
+                        { "black_rating" : { "$gte" : l } },
+                        { "black_rating" : { "$exists" : True} } ] }
+            ]},
+            {"moves":{ "$regex" : '^'+whitemove}}
         ]
     }
 
@@ -131,7 +134,7 @@ def findOpeningUsage(l, h):
         except IndexError:
             print("Error in printOpeningUsage(): out of bounds, opening read doesn't match")
 
-    print("-COUNTS OF EACH OPENING:\n--")
+    print("-[",l,",",h,"] COUNTS OF EACH OPENING (",whitemove," first move):\n--")
     for each in opening_names_temp:
         if opening_count_dict[each] == 0:
             continue
@@ -216,9 +219,9 @@ def setOpeningName():
 
 def main():
     setOpeningName() #all functions need this to run first
-    count = findOpeningUsage(800,1100)
+    count = findOpeningUsage(800,1100, 'd4')
     findPopularOpening(count)
 
-    #winrate_counts = findBlackOpeningWinrateE4(800,1100)
-    #findHighestWinrateE4(winrate_counts,10)
+    #winrate_counts = findBlackOpeningWinrate(800,1100,'d4')
+    #findHighestWinrate(winrate_counts,10)
 main()
