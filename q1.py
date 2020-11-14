@@ -21,13 +21,16 @@ opening_names = []
 '''
 def printTotals(l, h):
     games = {
-        "$or": [
-            { "$and": [ { "white_rating": { "$lt" : h } }, 
-                    { "white_rating" : { "$gte" : l } },
-                    { "white_rating" : { "$exists" : True} } ] },
-            { "$and": [ { "black_rating": { "$lt" : h } }, 
-                    { "black_rating" : { "$gte" : l } },
-                    { "black_rating" : { "$exists" : True} } ] }
+        "$and": [{
+            "$or": [
+                { "$and": [ { "white_rating": { "$lt" : h } }, 
+                        { "white_rating" : { "$gte" : l } },
+                        { "white_rating" : { "$exists" : True} } ] },
+                { "$and": [ { "black_rating": { "$lt" : h } }, 
+                        { "black_rating" : { "$gte" : l } },
+                        { "black_rating" : { "$exists" : True} } ] }
+            ]},
+            { "moves": { "$regex": '^e4.*'} }
         ]
     }
     
@@ -35,6 +38,7 @@ def printTotals(l, h):
     lowerRatedWin = 0
     higherRatedWin = 0
     draw = 0
+
     for each in result_cursor:
         if (each["white_rating"] > each["black_rating"]) and (each['winner'] == "white"):
             higherRatedWin+=1
@@ -46,6 +50,7 @@ def printTotals(l, h):
             lowerRatedWin+=1
         else:
             draw+=1 
+
             
     print("hrw: " ,higherRatedWin, " lrw: ", lowerRatedWin, " draws: ", draw)
     printWins(l,h)
@@ -59,16 +64,18 @@ def printTotals(l, h):
     Calls setOpeningMove()
 '''
 def printWins(l, h):
-    setOpeningName()
     openingListCopy = opening_names.copy()
     games = {
-        "$or": [
-            { "$and": [ { "white_rating": { "$lt" : h } }, 
-                    { "white_rating" : { "$gte" : l } },
-                    { "white_rating" : { "$exists" : True} } ] },
-            { "$and": [ { "black_rating": { "$lt" : h } }, 
-                    { "black_rating" : { "$gte" : l } },
-                    { "black_rating" : { "$exists" : True} } ] }
+        "$and": [{
+            "$or": [
+                { "$and": [ { "white_rating": { "$lt" : h } }, 
+                        { "white_rating" : { "$gte" : l } },
+                        { "white_rating" : { "$exists" : True} } ] },
+                { "$and": [ { "black_rating": { "$lt" : h } }, 
+                        { "black_rating" : { "$gte" : l } },
+                        { "black_rating" : { "$exists" : True} } ] }
+            ]},
+            { "moves": { "$regex": '^e4.*'} }
         ]
     }
     
@@ -89,7 +96,7 @@ def printWins(l, h):
             openingListCopy[i] ='rm'
     newOpening= [i for i in openingListCopy if i != 'rm']
     newCounts = [i for i in nameCounts if i != 0]
-    
+    print(sum(newCounts))
     #print the names with coresponding counts 
     for i in range(len(newCounts)):
         print("name: ", newOpening[i], " COUNT: ", newCounts[i])
@@ -130,6 +137,9 @@ def setOpeningName():
     
 
 def main():
-    #print bracket 
-    printTotals(800,1100)
+    setOpeningName()
+    printTotals(1800,2400)
+  
+
+    
 main()
