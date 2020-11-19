@@ -1,9 +1,4 @@
 import pymongo
-import os
-import json
-import csv
-import sys, getopt, pprint
-from pprint import pprint
 
 #Get DB connection and the chess collection
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
@@ -12,6 +7,13 @@ posts = db.posts
 
 #global list of opening names
 opening_names = []
+#global dict of opening counts 
+o_counts = {}
+#global dict of opening with win/losses
+o_win_loss = {}
+
+
+
 
 
 '''
@@ -19,7 +21,7 @@ opening_names = []
 
     Needs setOpeningName() to be run first.
 '''
-def findBlackOpeningWinrate(l, h, whitemove):
+def findBlackOpeningWinrate(l, h, whitemove, end = ""):
     games = {
         "$and" : [
             {"$or": [
@@ -51,7 +53,11 @@ def findBlackOpeningWinrate(l, h, whitemove):
         except IndexError:
             print("Error in printOpeningUsage(): out of bounds, opening read doesn't match")
 
-        #print(opening_count_dict)
+    #set global var
+    global o_win_loss 
+    o_win_loss = opening_count_dict.copy()
+    if(end != ""):  #used to solely declare the global var (avoids prints)
+        return
 
     print("-[",l,",",h,"] WINRATE OF EACH (",whitemove," move) OPENING:\n--")
     for each in opening_names_temp:
@@ -63,6 +69,10 @@ def findBlackOpeningWinrate(l, h, whitemove):
     print("------------------------")
 
     return opening_count_dict
+
+
+
+
 
 
 '''
@@ -89,12 +99,15 @@ def findHighestWinrate(opening_count_dict, n):
             mostWinOpening = opening
 
 
-    print("-The highest winrate opening, with ", mostWinCount, " win percentage in atleast ",n ," moves:")
+    print("-The highest winrate opening, with ", mostWinCount, " win percentage in atleast ",n ," games:")
     print("--")
     print(" ",mostWinOpening)
     print("------------------------")
 
-    return
+
+
+
+
 
 '''
     Prints the total number of openings used in the bracket of l to h.
@@ -102,7 +115,7 @@ def findHighestWinrate(opening_count_dict, n):
 
     Needs setOpeningName() to be run first.
 '''
-def findOpeningUsage(l, h, whitemove):
+def findOpeningUsage(l, h, whitemove, end = ""):
 
     games = {
         "$and" : [
@@ -133,6 +146,12 @@ def findOpeningUsage(l, h, whitemove):
             opening_count_dict[trimmed_name] = 1 + opening_count_dict[trimmed_name]
         except IndexError:
             print("Error in printOpeningUsage(): out of bounds, opening read doesn't match")
+            
+    #store result in global var
+    global o_counts
+    o_counts = opening_count_dict.copy() 
+    if(end != ""):
+        return 
 
     print("-[",l,",",h,"] COUNTS OF EACH OPENING (",whitemove," first move):\n--")
     for each in opening_names_temp:
@@ -141,6 +160,11 @@ def findOpeningUsage(l, h, whitemove):
         print(" ", each, ": ", opening_count_dict[each])
     print("------------------------")
     return opening_count_dict
+
+
+
+
+
 
 
 '''
@@ -188,10 +212,15 @@ def findPopularOpening(opening_count_dict):
     print("------------------------")
 
 
+
+
+
+
 '''
     Prints the total lower rated and higher rated wins
 '''
 def printRatingResults(l, h, move):
+    #Get all games using move "x" in bracket [l,h)
     games = {
         "$and": [{
             "$or": [
@@ -207,10 +236,13 @@ def printRatingResults(l, h, move):
     }
 
     result_cursor = posts.find(games)
+    
+    #vars 
     lowerRatedWin = 0
     higherRatedWin = 0
     draw = 0
 
+    #Keep track of upsets and rating consistent games
     for each in result_cursor:
         if (each["white_rating"] > each["black_rating"]) and (each['winner'] == "white"):
             higherRatedWin+=1
@@ -223,8 +255,72 @@ def printRatingResults(l, h, move):
         else:
             draw+=1
 
-
+    #print results 
     print("hrw: " ,higherRatedWin, " lrw: ", lowerRatedWin, " draws: ", draw)
+
+
+
+
+
+
+
+'''
+    Gets the top five most used openers in the bracket 
+'''
+def getTopFive():
+    #get copy of dict
+    opening_count_dict = o_counts.copy()
+    topFive = {}
+    
+    #loop 5 times to get the 5 most played openers 
+    while(len(topFive) != 5):
+        curName = ""
+        curmax = 0
+        #find a max
+        for each in opening_count_dict.keys():
+            if opening_count_dict[each] > curmax:
+                curmax = opening_count_dict[each]
+                curName = each
+                
+        #found a max
+        topFive[curName] = curmax
+        #delete current max from dict
+        del opening_count_dict[curName]
+    return topFive
+
+
+
+
+
+
+'''
+   get the top 5 most used openings win percentage along with their counts in dict
+'''     
+def getTopFivePercentages(topFive):
+    #get copies of o_win_loss global vars
+    opening_count_dict = o_win_loss.copy() 
+    
+    #append win rates to the top five most used openers
+    for each in topFive:
+        games_played = opening_count_dict[each]["wins"] + opening_count_dict[each]["losses"]
+        win_percentage = round((opening_count_dict[each]["wins"]/games_played) * 100,2)
+        topFive[each] = [topFive[each], win_percentage] 
+
+    return topFive
+
+
+
+'''
+gets the total count of all games played within the selected bracket 
+'''
+def totalCount():
+    o_c = o_counts.copy()
+    total = 0; 
+    for each in o_c.keys():
+        total += o_c[each]
+    print("total count is ",total)
+
+
 
 
 '''
@@ -232,21 +328,44 @@ def printRatingResults(l, h, move):
     to this dataset with variations removed)
 
     NOTE*
-    -when the global list is used in a function, a copy is made
-    -Creation of opening names list must be made into a separate function
-        to reduce redundancy in the case in which users make multiple calls
-        to printTotals()
+    -a copy of the global list opening_names is used in other functions 
 '''
 def setOpeningName():
     result = posts.find()
 
-    #Get 143 openings
+    #Get 143 openings by removing variations 
     for each in result:
         name = each['opening_name'].split(':')[0].split('|')[0].split('#')[0].rstrip()
         if(name not in opening_names):
             opening_names.append(name)
+    
     print(len(opening_names), " distinct openings.")
+    # sort list of names
     opening_names.sort()
+
+
+
+
+
+
+
+'''
+    Sets user inputs for the interface
+'''
+def getInputs():
+    white_move = input("Enter in white player's move> ")
+    lower_bound = int(input("Enter in lower rating bound> "))
+    upper_bound = int(input("Enter in upper rating bound> "))
+    return [white_move,lower_bound,upper_bound]
+
+
+
+
+
+
+
+
+
 
 
 
@@ -257,9 +376,7 @@ def setOpeningName():
 
 def main():
     setOpeningName() #query called by default
-    white_move = input("Enter in white player's move> ")
-    lower_bound = int(input("Enter in lower rating bound> "))
-    upper_bound = int(input("Enter in upper rating bound> "))
+    white_move, lower_bound, upper_bound = getInputs() 
 
     user_input = ""
     while(user_input != "quit"):
@@ -268,6 +385,11 @@ def main():
         print("1: Find opening usage, find least popular, find most popular.")
         print("2: Find opening winrate, find highest winrate.")
         print("3: Find number of upsets, Find number of rating consistent wins.")
+        print("4: See total # of games in bracket")
+        print("5: See top five most used moves with counts and win rates")
+        print("6: Enter in new bracket and initial move")
+        print("Enter in 'quit' to exit")
+        
         user_input = input("> ")
         print("\n")
 
@@ -280,17 +402,18 @@ def main():
             findHighestWinrate(winrate_counts,min_games)
         elif(user_input == "3"):
             printRatingResults(lower_bound, upper_bound, white_move)
+        elif(user_input == "4"):
+            findOpeningUsage(lower_bound, upper_bound, white_move, "zzz")
+            print("Total games in bracket")
+            print(totalCount())
+        elif(user_input == "5"):
+            findOpeningUsage(lower_bound, upper_bound, white_move, "zzz")
+            findBlackOpeningWinrate(lower_bound, upper_bound, white_move, "zzz")
+            print("Top 5 most used openers with their counts and win rates")
+            print(getTopFivePercentages(getTopFive()));
+        elif(user_input == "6"):
+            white_move, lower_bound, upper_bound = getInputs() 
 
         print("____________________________________________\n\n")
 
-
-    '''
-        count = findOpeningUsage(800,1100, 'd4')
-        findPopularOpening(count)
-
-        winrate_counts = findBlackOpeningWinrate(800,1100,'d4')
-        findHighestWinrate(winrate_counts,10)
-
-        printRatingResults(800,1100,'d4')
-    '''
 main()
