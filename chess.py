@@ -18,7 +18,7 @@ def main():
     
    
     #open the csv file, NOTE CHANGE THE FILEPATH 
-    csvfile = open('../../../Users/roshi/Desktop/games.csv')
+    csvfile = open('xxx')
     reader = csv.DictReader(csvfile)
     header = ["id", "rated", "created_at", "last_move_at", "victory_status", "winner", 
               "increment_code", "white_id", "white_rating", "black_id", "black_rating",
