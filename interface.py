@@ -36,13 +36,14 @@ def findBlackOpeningWinrate(l, h, whitemove, end = ""):
         ]
     }
 
-    result_cursor = posts.find(games)
+    result_cursor = posts.find(games) #runs query
 
     opening_count_dict = {}
     opening_names_temp = opening_names.copy()
     for opening_name in opening_names_temp:
         opening_count_dict[opening_name] = {"wins":0, "losses":0} #Creates a dictionary for W/L
 
+    #iterates through each selected match, checks the winner, adds a count to that opener if black wins
     for each in result_cursor:
         trimmed_name = each['opening_name'].split(':')[0].split('|')[0].split('#')[0].rstrip()
         try:
@@ -88,13 +89,13 @@ def findHighestWinrate(opening_count_dict, n):
     mostWinOpening = ""
     mostWinCount = 0
 
-    for opening, count in opening_count_dict.items():
+    for opening, count in opening_count_dict.items(): #takes the winloss of every opening
         games_played = count["wins"] + count["losses"]
         if(games_played == 0):
             continue
-        win_percentage = round((count["wins"]/games_played) * 100,2)
+        win_percentage = round((count["wins"]/games_played) * 100,2) #calculates winrate
 
-        if(win_percentage > mostWinCount and games_played >= n):
+        if(win_percentage > mostWinCount and games_played >= n):#checks if its the greatest
             mostWinCount = win_percentage
             mostWinOpening = opening
 
@@ -131,7 +132,7 @@ def findOpeningUsage(l, h, whitemove, end = ""):
         ]
     }
 
-    result_cursor = posts.find(games)
+    result_cursor = posts.find(games) #runs query
 
     #Make a copy of the opening names list
     #Set up a dict to count each type of opening
@@ -140,7 +141,7 @@ def findOpeningUsage(l, h, whitemove, end = ""):
     for opening_name in opening_names_temp:
         opening_count_dict[opening_name] = 0
 
-    for each in result_cursor:
+    for each in result_cursor: #counts all the openers
         trimmed_name = each['opening_name'].split(':')[0].split('|')[0].split('#')[0].rstrip()
         try:
             opening_count_dict[trimmed_name] = 1 + opening_count_dict[trimmed_name]
@@ -180,6 +181,7 @@ def findPopularOpening(opening_count_dict):
     mostPopularOpeningList = []
     mostPopularCount = 0
 
+    #performs a simple iteration to find max
     for opening, count in opening_count_dict.items():
         if(count > mostPopularCount):
             mostPopularCount = count
@@ -197,6 +199,7 @@ def findPopularOpening(opening_count_dict):
     leastPopularOpeningList = []
     leastPopularCount = 99999
 
+    #performs a simple iteration to find min
     for opening, count in opening_count_dict.items():
         if(count < leastPopularCount and count != 0):
             leastPopularCount = count
@@ -378,6 +381,7 @@ def main():
     setOpeningName() #query called by default
     white_move, lower_bound, upper_bound = getInputs() 
 
+    #interface
     user_input = ""
     while(user_input != "quit"):
         print("\nQuerying for move: ",white_move," and rating bounds [",lower_bound,",",upper_bound,"]")
